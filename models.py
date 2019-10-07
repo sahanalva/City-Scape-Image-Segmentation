@@ -51,7 +51,7 @@ def unet(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
 
     model = Model(inputs = inp, outputs = conv10)
 
-    model.compile(optimizer = Adam(lr = 1e-4), loss = 'categorical_crossentropy', metrics = ['accuracy'])
+    model.compile(optimizer = Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0, amsgrad=True), loss = 'categorical_crossentropy', metrics = ['accuracy'])
     
     #model.summary()
 
@@ -106,5 +106,5 @@ def segnet(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)
     x = Convolution2D(num_classes, 1, padding = "valid")(x)
     x = Activation("softmax")(x)
     model = Model(inputs = inp, outputs = x)
-    model.compile(optimizer = Adam(lr = 1e-4), loss = 'categorical_crossentropy', metrics = ['accuracy'])
+    model.compile(optimizer = Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0, amsgrad=True), loss = 'categorical_crossentropy', metrics = ['accuracy'])
     return model
