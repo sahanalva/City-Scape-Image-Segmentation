@@ -7,6 +7,7 @@ from tensorflow.python.keras.layers import *
 from tensorflow.python.keras.optimizers import *
 from tensorflow.python.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from tensorflow.python.keras import backend as K
+from tensorflow.python.keras import utils
 
 def iou_coef(y_true, y_pred, smooth=1):
   intersection = K.sum(K.abs(y_true * y_pred), axis=[1,2,3])
@@ -348,4 +349,138 @@ def unet_resnet_simple(pretrained_weights = None, num_classes = 20, input_size =
 
     return model
 
+
+def identity_block(input_x, filters):
+    
+    filters_1, filters_2, filters_3 = filters
+
+    x = Conv2D(filters_1, (1, 1))(input_x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(filters_2, 3,padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    
+    x = Conv2D(filters_3, (1, 1))(x)
+    x = BatchNormalization()(x)
+    
+    x = add([x, input_x])
+    x = Activation('relu')(x)
+    return x
+
+
+def conv_block(input_x, filters, strides=(2, 2)):
+
+    filters_1, filters_2, filters_3 = filters
+
+
+
+    x = Conv2D(filters_1, (1, 1), strides=strides)(input_x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(filters_2, 3, padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(filters_3, (1, 1))(x)
+    x = BatchNormalization()(x)
+
+    shortcut = Conv2D(filters_3, (1, 1),
+                      strides=strides)(input_x)
+    shortcut = BatchNormalization()(shortcut)
+
+
+    x = add([x, shortcut])
+    x = Activation('relu')(x)
+    return x
+
+
+def resnet50_encoder(pretrained_weights = 'imagenet', num_classes = 20, input_size = (256,256,1)):
+
+    pretrained_url = "https://github.com/fchollet/deep-learning-models/releases/download/v0.2/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5"
+
+    inp = Input(input_size)
+
+    x = ZeroPadding2D((3, 3))(inp)
+    x = Conv2D(64, (7, 7),
+               strides=(2, 2))(x)
+    feature_map_1 = x
+
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = MaxPooling2D((3, 3), strides=(2, 2))(x)
+
+    x = conv_block(x, [64, 64, 256], strides=(1, 1))
+    x = identity_block(x, [64, 64, 256])
+    x = identity_block(x, [64, 64, 256])
+    feature_map_2 = ZeroPadding2D((1, 1))(x)
+    feature_map_2 = Lambda(lambda x: x[:, :-1, :-1, :])(feature_map_2)
+
+    x = conv_block(x, [128, 128, 512])
+    x = identity_block(x, [128, 128, 512])
+    x = identity_block(x, [128, 128, 512])
+    x = identity_block(x, [128, 128, 512])
+    feature_map_3 = x
+
+    x = conv_block(x, [256, 256, 1024])
+    x = identity_block(x,  [256, 256, 1024])
+    x = identity_block(x,  [256, 256, 1024])
+    x = identity_block(x,  [256, 256, 1024])
+    x = identity_block(x,  [256, 256, 1024])
+    x = identity_block(x,  [256, 256, 1024])
+    feature_map_4 = x
+
+    x = conv_block(x, [512, 512, 2048])
+    x = identity_block(x, [512, 512, 2048])
+    x = identity_block(x, [512, 512, 2048])
+    feature_map_5 = x
+
+
+
+
+    model = Model(inputs = inp, outputs = feature_map_5)
+
+
+    if pretrained_weights == 'imagenet':
+        weights_path = utils.get_file(
+            pretrained_url.split("/")[-1], pretrained_url)
+        model.load_weights(weights_path)
+
+    return inp,[feature_map_1,feature_map_2,feature_map_3,feature_map_4,feature_map_5]
+
+def resnet50_encoder_unet_decoder(pretrained_weights = 'None', num_classes = 20, input_size = (256,256,1)):
+    inp, feature_map_list= resnet50_encoder(pretrained_weights = 'imagenet', num_classes = num_classes, input_size = input_size)
+
+    up6 = Conv2D(512, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(feature_map_list[4]))
+    merge6 = concatenate([feature_map_list[3],up6], axis = 3)
+    conv6 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge6)
+    conv6 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv6)
+
+    up7 = Conv2D(256, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv6))
+    merge7 = concatenate([feature_map_list[2],up7], axis = 3)
+    conv7 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge7)
+    conv7 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv7)
+
+    up8 = Conv2D(128, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv7))
+    merge8 = concatenate([feature_map_list[1],up8], axis = 3)
+    conv8 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge8)
+    conv8 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv8)
+
+    up9 = Conv2D(64, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv8))
+    merge9 = concatenate([feature_map_list[0],up9], axis = 3)
+    conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge9)
+    conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
+    
+    up10 = Conv2D(64, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv9))
+    merge9 = concatenate([inp,up10], axis = 3)
+    conv10 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge9)
+    conv10 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv10)
+    conv11 = Conv2D(20, 1, activation = 'sigmoid')(conv10)
+
+    model = Model(inputs = inp, outputs = conv11)
+    model.compile(optimizer = Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0, amsgrad=True), loss = 'categorical_crossentropy', metrics = ['accuracy',iou_coef])
+
+    return model
 
