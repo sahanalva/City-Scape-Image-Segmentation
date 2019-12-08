@@ -120,7 +120,7 @@ def segnet(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)
     return model
 
 
-def resnet_concat(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
+def segnet_skipconnect_concat(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
     inp = Input(input_size)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same')(inp)
     conv1_2 = Conv2D(64, 3, activation = 'relu', padding = 'same')(conv1)
@@ -175,7 +175,7 @@ def resnet_concat(pretrained_weights = None, num_classes = 20, input_size = (256
 
     return model
 
-def resnet_simple(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
+def segnet_skipconnect(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
     inp = Input(input_size)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same')(inp)
     conv1_2 = Conv2D(64, 3, activation = 'relu', padding = 'same')(conv1)
@@ -231,7 +231,7 @@ def resnet_simple(pretrained_weights = None, num_classes = 20, input_size = (256
     return model
 
 
-def unet_resnet_concat(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
+def unet_skipconnect_concat(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
     inp = Input(input_size)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same')(inp)
     conv1_2 = Conv2D(64, 3, activation = 'relu', padding = 'same')(conv1)
@@ -290,7 +290,7 @@ def unet_resnet_concat(pretrained_weights = None, num_classes = 20, input_size =
 
     return model
 
-def unet_resnet_simple(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
+def unet_skipconnect(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
     inp = Input(input_size)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same')(inp)
     conv1_2 = Conv2D(64, 3, activation = 'relu', padding = 'same')(conv1)
@@ -450,7 +450,7 @@ def resnet50_encoder(pretrained_weights = 'imagenet', num_classes = 20, input_si
 
     return inp,[feature_map_1,feature_map_2,feature_map_3,feature_map_4,feature_map_5]
 
-def resnet50_encoder_unet_decoder(pretrained_weights = 'None', num_classes = 20, input_size = (256,256,1)):
+def resnet50_encoder_unet_decoder(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
     inp, feature_map_list= resnet50_encoder(pretrained_weights = 'imagenet', num_classes = num_classes, input_size = input_size)
 
     up6 = Conv2D(512, 2, activation = 'relu', padding = 'same')(UpSampling2D(size = (2,2))(feature_map_list[4]))
@@ -477,10 +477,13 @@ def resnet50_encoder_unet_decoder(pretrained_weights = 'None', num_classes = 20,
     merge9 = concatenate([inp,up10], axis = 3)
     conv10 = Conv2D(64, 3, activation = 'relu', padding = 'same')(merge9)
     conv10 = Conv2D(64, 3, activation = 'relu', padding = 'same')(conv10)
-    conv11 = Conv2D(20, 1, activation = 'sigmoid')(conv10)
+    conv11 = Conv2D(20, 1, activation = 'softmax')(conv10)
 
     model = Model(inputs = inp, outputs = conv11)
-    model.compile(optimizer = Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0, amsgrad=True), loss = 'categorical_crossentropy', metrics = ['accuracy',iou_coef])
+    model.compile(optimizer = Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.001, amsgrad=True), loss = 'categorical_crossentropy', metrics = ['accuracy',iou_coef])
 
+    if(pretrained_weights):
+        model.load_weights(pretrained_weights)
+        
     return model
 
