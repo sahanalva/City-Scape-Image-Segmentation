@@ -18,43 +18,43 @@ def iou_coef(y_true, y_pred, smooth=1):
 
 def unet(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
     inp = Input(input_size)
-    conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(inp)
-    conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv1)
+    conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same')(inp)
+    conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same')(conv1)
     pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
-    conv2 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool1)
-    conv2 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv2)
+    conv2 = Conv2D(128, 3, activation = 'relu', padding = 'same')(pool1)
+    conv2 = Conv2D(128, 3, activation = 'relu', padding = 'same')(conv2)
     pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
-    conv3 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool2)
-    conv3 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv3)
+    conv3 = Conv2D(256, 3, activation = 'relu', padding = 'same')(pool2)
+    conv3 = Conv2D(256, 3, activation = 'relu', padding = 'same')(conv3)
     pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
-    conv4 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool3)
-    conv4 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv4)
+    conv4 = Conv2D(512, 3, activation = 'relu', padding = 'same')(pool3)
+    conv4 = Conv2D(512, 3, activation = 'relu', padding = 'same')(conv4)
     drop4 = Dropout(0.5)(conv4)
     pool4 = MaxPooling2D(pool_size=(2, 2))(drop4)
 
-    conv5 = Conv2D(1024, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool4)
-    conv5 = Conv2D(1024, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv5)
+    conv5 = Conv2D(1024, 3, activation = 'relu', padding = 'same')(pool4)
+    conv5 = Conv2D(1024, 3, activation = 'relu', padding = 'same')(conv5)
     drop5 = Dropout(0.5)(conv5)
 
-    up6 = Conv2D(512, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(drop5))
+    up6 = Conv2D(512, 2, activation = 'relu', padding = 'same')(UpSampling2D(size = (2,2))(drop5))
     merge6 = concatenate([drop4,up6], axis = 3)
-    conv6 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge6)
-    conv6 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv6)
+    conv6 = Conv2D(512, 3, activation = 'relu', padding = 'same')(merge6)
+    conv6 = Conv2D(512, 3, activation = 'relu', padding = 'same')(conv6)
 
-    up7 = Conv2D(256, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv6))
+    up7 = Conv2D(256, 2, activation = 'relu', padding = 'same')(UpSampling2D(size = (2,2))(conv6))
     merge7 = concatenate([conv3,up7], axis = 3)
-    conv7 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge7)
-    conv7 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv7)
+    conv7 = Conv2D(256, 3, activation = 'relu', padding = 'same')(merge7)
+    conv7 = Conv2D(256, 3, activation = 'relu', padding = 'same')(conv7)
 
-    up8 = Conv2D(128, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv7))
+    up8 = Conv2D(128, 2, activation = 'relu', padding = 'same')(UpSampling2D(size = (2,2))(conv7))
     merge8 = concatenate([conv2,up8], axis = 3)
-    conv8 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge8)
-    conv8 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv8)
+    conv8 = Conv2D(128, 3, activation = 'relu', padding = 'same')(merge8)
+    conv8 = Conv2D(128, 3, activation = 'relu', padding = 'same')(conv8)
 
-    up9 = Conv2D(64, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv8))
+    up9 = Conv2D(64, 2, activation = 'relu', padding = 'same')(UpSampling2D(size = (2,2))(conv8))
     merge9 = concatenate([conv1,up9], axis = 3)
-    conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge9)
-    conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
+    conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same')(merge9)
+    conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same')(conv9)
     conv10 = Conv2D(num_classes, 1, activation = 'sigmoid')(conv9)
 
     model = Model(inputs = inp, outputs = conv10)
@@ -120,7 +120,7 @@ def segnet(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)
     return model
 
 
-def resnet_concat(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
+def segnet_skipconnect_concat(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
     inp = Input(input_size)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same')(inp)
     conv1_2 = Conv2D(64, 3, activation = 'relu', padding = 'same')(conv1)
@@ -175,7 +175,7 @@ def resnet_concat(pretrained_weights = None, num_classes = 20, input_size = (256
 
     return model
 
-def resnet_simple(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
+def segnet_skipconnect(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
     inp = Input(input_size)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same')(inp)
     conv1_2 = Conv2D(64, 3, activation = 'relu', padding = 'same')(conv1)
@@ -231,7 +231,7 @@ def resnet_simple(pretrained_weights = None, num_classes = 20, input_size = (256
     return model
 
 
-def unet_resnet_concat(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
+def unet_skipconnect_concat(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
     inp = Input(input_size)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same')(inp)
     conv1_2 = Conv2D(64, 3, activation = 'relu', padding = 'same')(conv1)
@@ -290,7 +290,7 @@ def unet_resnet_concat(pretrained_weights = None, num_classes = 20, input_size =
 
     return model
 
-def unet_resnet_simple(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
+def unet_skipconnect(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
     inp = Input(input_size)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same')(inp)
     conv1_2 = Conv2D(64, 3, activation = 'relu', padding = 'same')(conv1)
@@ -450,7 +450,7 @@ def resnet50_encoder(pretrained_weights = 'imagenet', num_classes = 20, input_si
 
     return inp,[feature_map_1,feature_map_2,feature_map_3,feature_map_4,feature_map_5]
 
-def resnet50_encoder_unet_decoder(pretrained_weights = 'None', num_classes = 20, input_size = (256,256,1)):
+def resnet50_encoder_unet_decoder(pretrained_weights = None, num_classes = 20, input_size = (256,256,1)):
     inp, feature_map_list= resnet50_encoder(pretrained_weights = 'imagenet', num_classes = num_classes, input_size = input_size)
 
     up6 = Conv2D(512, 2, activation = 'relu', padding = 'same')(UpSampling2D(size = (2,2))(feature_map_list[4]))
@@ -477,10 +477,13 @@ def resnet50_encoder_unet_decoder(pretrained_weights = 'None', num_classes = 20,
     merge9 = concatenate([inp,up10], axis = 3)
     conv10 = Conv2D(64, 3, activation = 'relu', padding = 'same')(merge9)
     conv10 = Conv2D(64, 3, activation = 'relu', padding = 'same')(conv10)
-    conv11 = Conv2D(20, 1, activation = 'sigmoid')(conv10)
+    conv11 = Conv2D(20, 1, activation = 'softmax')(conv10)
 
     model = Model(inputs = inp, outputs = conv11)
-    model.compile(optimizer = Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0, amsgrad=True), loss = 'categorical_crossentropy', metrics = ['accuracy',iou_coef])
+    model.compile(optimizer = Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.001, amsgrad=True), loss = 'categorical_crossentropy', metrics = ['accuracy',iou_coef])
 
+    if(pretrained_weights):
+        model.load_weights(pretrained_weights)
+        
     return model
 
